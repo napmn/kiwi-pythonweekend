@@ -8,7 +8,6 @@ from slugify import slugify
 
 class FlixbusScraper:
     def __init__(self):
-        # self.cities_codes = self.get_cities_codes()
         self.session = requests.Session()
         redis_config = {
             'host': 'redis.pythonweekend.skypicker.com',
@@ -82,42 +81,43 @@ class FlixbusScraper:
         ))
         journeys = []
         for div in journeys_divs:
-            journey = {}
-
-            departure_hour, departure_minute = div.xpath(
-                './/div[@class="departure"]'
-            )[0].text.split(':')
-            
-            arrival_hour, arrival_minute = div.xpath(
-                './/div[@class="arrival"]'
-            )[0].text.split(':')
-            
-            dt = departure_date.replace(
-                hour=int(departure_hour), minute=int(departure_minute)
-            )
-            if dt < datetime.now():
-                # do not list journey that already started
-                continue
-            journey['departure_datetime'] = dt.strftime('%Y-%m-%d %H:%M:%S')
-
-            journey['arrival_datetime'] = departure_date.replace(
-                hour=int(arrival_hour), minute=int(arrival_minute)
-            ).strftime('%Y-%m-%d %H:%M:%S')
-            
-            journey['source'] = div.xpath(
-                './/div[contains(@class, "departure-station-name")]')[0].text
-            
-            journey['destination'] = div.xpath(
-                './/div[contains(@class, "arrival-station-name")]')[0].text
-            
-            journey['price'] = div.xpath(
-                './/span[contains(@class, "currency-small-cents")]'
-            )[0].text_content().split()[0]
-            
-            journeys.append(journey)
+            journey = self.parse_journey(div, departure_date)
+            if journey:
+                journeys.append(journey)
         
         return journeys
 
+    def parse_journey(self, div, departure_date):
+        journey = {}
+        departure_hour, departure_minute = \
+            div.xpath('.//div[@class="departure"]')[0].text.split(':')
+        
+        arrival_hour, arrival_minute = \
+            div.xpath('.//div[@class="arrival"]')[0].text.split(':')
+        
+        dt = departure_date.replace(
+            hour=int(departure_hour), minute=int(departure_minute)
+        )
+        if dt < datetime.now():
+            # do not list journey that already started
+            return None
+        journey['departure_datetime'] = dt.strftime('%Y-%m-%d %H:%M:%S')
+
+        journey['arrival_datetime'] = departure_date.replace(
+            hour=int(arrival_hour), minute=int(arrival_minute)
+        ).strftime('%Y-%m-%d %H:%M:%S')
+        
+        journey['source'] = div.xpath(
+            './/div[contains(@class, "departure-station-name")]')[0].text
+        
+        journey['destination'] = div.xpath(
+            './/div[contains(@class, "arrival-station-name")]')[0].text
+        
+        journey['price'] = float(div.xpath(
+            './/span[contains(@class, "currency-small-cents")]'
+        )[0].text_content().split()[0])
+
+        return journey
 
 if __name__ == '__main__':
     scraper = FlixbusScraper()
