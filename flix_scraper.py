@@ -93,17 +93,15 @@ class FlixbusScraper:
         journeys.
         """
         doc = html.fromstring(html_doc)
-        journeys_divs = doc.xpath((
+        j_divs = doc.xpath((
             '//div[contains(@class, "ride-item-pair") and'
             'contains(@data-departure-date, "{}")]'.format(
                 departure_date.strftime('%Y-%m-%d')
             )
         ))
-        journeys = []
-        for div in journeys_divs:
-            journey = self.parse_journey(div, departure_date)
-            if journey:
-                journeys.append(journey)
+        journeys = [
+            j for div in j_divs if (j := self.parse_journey(div, departure_date))
+        ]
         
         return journeys
 
