@@ -1,4 +1,6 @@
+import json
 import lxml.html as html
+from redis import StrictRedis
 import requests
 from datetime import datetime
 from slugify import slugify
@@ -6,21 +8,36 @@ from slugify import slugify
 
 class FlixbusScraper:
     def __init__(self):
-        self.cities_codes = self.get_cities_codes()
+        # self.cities_codes = self.get_cities_codes()
         self.session = requests.Session()
+        redis_config = {
+            'host': 'redis.pythonweekend.skypicker.com',
+        }
+        self.redis = StrictRedis(
+            socket_connect_timeout=3, decode_responses=True, **redis_config
+        )
 
     def get_cities_codes(self):
-        r = requests.get('https://d11mb9zho2u7hy.cloudfront.net/api/v1/cities')
+        r = self.session.get('https://d11mb9zho2u7hy.cloudfront.net/api/v1/cities')
         cities_codes = {}
         for key, data in r.json()['cities'].items():
             cities_codes[data['slug']] = data['id']
         return cities_codes
 
+    def get_city_id(self, city):
+        city_id = self.redis.get(city)
+        if city_id is None:
+            # city is not in redis
+            cities_codes = self.get_cities_codes()
+            city_id = cities_codes.get(city, None)
+            if city_id is None:
+                raise ValueError('Cant find id for given cities')
+            self.redis.set(f'letovanec:location:{city}', str(city_id), ex=60)
+        return city_id
+
     def get_journeys_html(self, source, destination, departure_date):
-        departure_city = self.cities_codes.get(source, None)
-        arrival_city = self.cities_codes.get(destination, None)
-        if departure_city is None or arrival_city is None:
-            raise ValueError('Cant find id for given cities')
+        departure_city = self.get_city_id(source)
+        arrival_city = self.get_city_id(destination)
         params = {
             'departureCity': departure_city,
             'arrivalCity': arrival_city,
@@ -32,18 +49,28 @@ class FlixbusScraper:
         )
         if not r.ok:
             raise Exceception(
-                'Flixbus did not return status code {}, returned {}'.format(    
-                    r.status_code)
+                f'Flixbus did not return status code 200, returned {r.status_code}'
             )
         return r.text
 
     def get_parsed_journeys(self, source, destination, departure_date):
         source_slug = slugify(source)
         destination_slug = slugify(destination)
+        dt = departure_date.strftime('%Y-%m-%d')
+        journey_slug = \
+            f'letovanec:journey:{source_slug}_{destination_slug}_{dt}'
+        journeys = self.redis.get(journey_slug)
+        if journeys:
+            # return journey if found in redis
+            return json.loads(journeys)
+        
+        # if not found scrate flixbus and save to redis
         journeys_html = self.get_journeys_html(
             source_slug, destination_slug, departure_date
         )
-        return self.parse_journeys(journeys_html, departure_date)
+        journeys = self.parse_journeys(journeys_html, departure_date)
+        self.redis.set(journey_slug, json.dumps(journeys), ex=60)
+        return journeys
 
     def parse_journeys(self, html_doc, departure_date):
         doc = html.fromstring(html_doc)

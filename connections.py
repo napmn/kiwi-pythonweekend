@@ -17,9 +17,7 @@ def is_valid_date(arg):
     try:
         return datetime.strptime(arg, '%Y-%d-%m')
     except ValueError:
-        raise argparse.ArgumentTypeError(
-            'Not a valid date format {}'.format(arg)
-        )
+        raise argparse.ArgumentTypeError(f'Not a valid date format {arg}')
 
 
 if __name__ == '__main__':
