@@ -29,14 +29,15 @@ class FlixbusScraper:
         Tries to fetch city id from redis first, if not found gets in from
         flixbus api, stores it to redis and returns it
         """
-        city_id = self.redis.get(city)
+        city_redis_slug = f'letovanec:location:{city}'
+        city_id = self.redis.get(city_redis_slug)
         if city_id is None:
             # city is not in redis
             cities_codes = self.get_cities_codes()
             city_id = cities_codes.get(city, None)
             if city_id is None:
                 raise ValueError('Cant find id for given cities')
-            self.redis.set(f'letovanec:location:{city}', str(city_id), ex=60)
+            self.redis.set(city_redis_slug, str(city_id), ex=60)
         return city_id
 
     def get_journeys_html(self, source, destination, departure_date):
