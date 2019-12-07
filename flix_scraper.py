@@ -40,7 +40,7 @@ class FlixbusScraper:
             self.redis.set(city_redis_slug, str(city_id), ex=60)
         return city_id
 
-    def get_journeys_html(self, source, destination, departure_date):
+    def get_journeys_html(self, source, destination, departure_date, **kwargs):
         """
         Fetch flixbus search result for given source, destination
         and departure time
@@ -53,6 +53,7 @@ class FlixbusScraper:
             'rideDate': departure_date.strftime('%d.%m.%Y'),
             'adult': '1'
         }
+        params.update(kwargs)
         r = self.session.get(
             'https://shop.global.flixbus.com/search', params=params
         )
@@ -62,7 +63,7 @@ class FlixbusScraper:
             )
         return r.text
 
-    def get_parsed_journeys(self, source, destination, departure_date):
+    def get_parsed_journeys(self, source, destination, departure_date, **kwargs):
         """
         Tries to fetch journey specidied by source, destination
         and departure date from redis. If its not there scrapes
@@ -81,7 +82,7 @@ class FlixbusScraper:
         
         # if not found scrate flixbus and save to redis
         journeys_html = self.get_journeys_html(
-            source_slug, destination_slug, departure_date
+            source_slug, destination_slug, departure_date, **kwargs
         )
         journeys = self.parse_journeys(journeys_html, departure_date)
         self.redis.set(journey_slug, json.dumps(journeys), ex=60)
@@ -102,7 +103,6 @@ class FlixbusScraper:
         journeys = [
             j for div in j_divs if (j := self.parse_journey(div, departure_date))
         ]
-        
         return journeys
 
     def parse_journey(self, div, departure_date):
