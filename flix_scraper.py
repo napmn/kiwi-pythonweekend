@@ -17,6 +17,7 @@ class FlixbusScraper:
         )
 
     def get_cities_codes(self):
+        """ Fetch flixbus codes for cities """ 
         r = self.session.get('https://d11mb9zho2u7hy.cloudfront.net/api/v1/cities')
         cities_codes = {}
         for key, data in r.json()['cities'].items():
@@ -24,6 +25,10 @@ class FlixbusScraper:
         return cities_codes
 
     def get_city_id(self, city):
+        """
+        Tries to fetch city id from redis first, if not found gets in from
+        flixbus api, stores it to redis and returns it
+        """
         city_id = self.redis.get(city)
         if city_id is None:
             # city is not in redis
@@ -35,6 +40,10 @@ class FlixbusScraper:
         return city_id
 
     def get_journeys_html(self, source, destination, departure_date):
+        """
+        Fetch flixbus search result for given source, destination
+        and departure time
+        """
         departure_city = self.get_city_id(source)
         arrival_city = self.get_city_id(destination)
         params = {
@@ -53,6 +62,12 @@ class FlixbusScraper:
         return r.text
 
     def get_parsed_journeys(self, source, destination, departure_date):
+        """
+        Tries to fetch journey specidied by source, destination
+        and departure date from redis. If its not there scrapes
+        flixbus search result page, stores it to redis and returns
+        list of journeys.
+        """
         source_slug = slugify(source)
         destination_slug = slugify(destination)
         dt = departure_date.strftime('%Y-%m-%d')
@@ -72,6 +87,10 @@ class FlixbusScraper:
         return journeys
 
     def parse_journeys(self, html_doc, departure_date):
+        """
+        Parse search result from flixbus, returns list of parsed
+        journeys.
+        """
         doc = html.fromstring(html_doc)
         journeys_divs = doc.xpath((
             '//div[contains(@class, "ride-item-pair") and'
@@ -88,6 +107,7 @@ class FlixbusScraper:
         return journeys
 
     def parse_journey(self, div, departure_date):
+        """ Parses div that corresponds to one journey. """
         journey = {}
         departure_hour, departure_minute = \
             div.xpath('.//div[@class="departure"]')[0].text.split(':')
