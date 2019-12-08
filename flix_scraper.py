@@ -1,8 +1,8 @@
 import json
 import lxml.html as html
-from redis import StrictRedis
 import requests
 from datetime import datetime
+from redis import StrictRedis
 from slugify import slugify
 
 

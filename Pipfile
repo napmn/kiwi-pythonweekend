@@ -11,6 +11,8 @@ requests = "*"
 lxml = "*"
 python-slugify = "*"
 flask = "*"
+psycopg2-binary = "*"
+sqlalchemy = "*"
 
 [requires]
 python_version = "3.8"
