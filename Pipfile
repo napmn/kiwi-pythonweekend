@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+ipython = "*"
 
 [packages]
 redis = "*"
@@ -13,6 +14,7 @@ python-slugify = "*"
 flask = "*"
 psycopg2-binary = "*"
 sqlalchemy = "*"
+flask-wtf = "*"
 
 [requires]
 python_version = "3.8"

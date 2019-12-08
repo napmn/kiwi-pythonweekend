@@ -120,11 +120,11 @@ class FlixbusScraper:
         if dt < datetime.now():
             # do not list journey that already started
             return None
-        journey['departure_datetime'] = dt.strftime('%Y-%m-%d %H:%M:%S')
+        journey['departure_datetime'] = dt.strftime('%Y-%m-%d %H:%M')
 
         journey['arrival_datetime'] = departure_date.replace(
             hour=int(arrival_hour), minute=int(arrival_minute)
-        ).strftime('%Y-%m-%d %H:%M:%S')
+        ).strftime('%Y-%m-%d %H:%M')
         
         journey['source'] = div.xpath(
             './/div[contains(@class, "departure-station-name")]')[0].text

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <form class="form form-horizontal" role="form" action="{{ url_for('search') }}" method="post">
+    <div class="row">
+      <div class="col-sm">
+        <label for="source">Departure city</label>  
+        <input type="text" class="form-control" id="source" name="source" placeholder="">
+      </div>
+      <div class="col-sm">
+        <label for="destination">Arrival city</label>
+        <input type="text" class="form-control" id="destination" name="destination" placeholder="">
+      </div>
+      <div class="col-sm">
+        <label for="date">Date</label>
+        <input type="text" class="form-control" id="date" name="date" placeholder="" autocomplete="off">
+      </div>
+      <div class="col-sm text-center">
+        <center>
+        <button class="btn btn-success" type="submit">Search</button>
+      </center>
+      </div>    
+    </div>
+  </form>
+
+  <ul class="list-group">
+    {% for journey in journeys %}
+    <li class="list-group-item {% if loop.index % 2 == 0 %}list-group-item-success{% endif %}">
+      <div class="row">
+        <div class="col-sm text-center">
+            {{ journey["source"] }} --> {{ journey ['destination'] }}
+        </div>
+        <div class="col-sm text-center">
+          Departure time: {{ journey["departure_datetime"] }}
+        </div>
+        <div class="col-sm text-center">
+          {{ journey["price"] }} €
+        </div>
+        
+      </div>
+    </li>
+    {% endfor %}
+  <ul>
+</div>
+<script>
+    var picker = new Pikaday({
+      field: document.getElementById('date'),
+      format: "YYYY-MM-DD",
+    });
+</script>
+{% endblock %}

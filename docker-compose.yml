@@ -1,0 +1,11 @@
+version: '1'
+
+services:
+  app:
+    image: journeys_app
+    build:
+      context: .
+    ports:
+      - 5000:5000
+  redis:
+    image: redis:alpine
